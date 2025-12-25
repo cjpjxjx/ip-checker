@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP 地址查询</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            padding: 0;
+            color: #000000;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 500;
+            margin-bottom: 36px;
+            letter-spacing: -0.3px;
+            color: #1a1a1a;
+        }
+
+        .subtitle {
+            color: #666666;
+            font-size: 14px;
+            margin-bottom: 48px;
+            font-weight: 400;
+        }
+
+        .ip-display {
+            margin-top: 32px;
+            margin-bottom: 40px;
+        }
+
+        .info-table {
+            margin-top: 0;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .table-row {
+            display: flex;
+            border-bottom: 1px solid #e5e5e5;
+            transition: background-color 0.15s ease;
+        }
+
+        .table-row:last-child {
+            border-bottom: none;
+        }
+
+        .table-row:hover {
+            background-color: #f5f5f5;
+        }
+
+        .table-label {
+            flex: 0 0 100px;
+            padding: 14px 16px;
+            font-size: 13px;
+            color: #555555;
+            font-weight: 500;
+            border-right: 1px solid #e5e5e5;
+            background-color: #f8f8f8;
+        }
+
+        .table-value {
+            flex: 1;
+            padding: 14px 16px;
+            font-size: 14px;
+            color: #1a1a1a;
+            font-weight: 400;
+            font-family: 'Consolas', 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Courier New', monospace;
+            letter-spacing: 0.3px;
+            word-break: break-all;
+            background-color: #ffffff;
+        }
+
+        .table-value.error {
+            color: #d32f2f;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        /* 加载动画 */
+        .loading-icon {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #e5e5e5;
+            border-top-color: #999999;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            display: inline-block;
+            color: #999999;
+            animation: dots 2.4s steps(6, end) infinite;
+        }
+
+        @keyframes dots {
+            0% { content: '查询中.'; }
+            16.66% { content: '查询中..'; }
+            33.32% { content: '查询中...'; }
+            49.98% { content: '查询中....'; }
+            66.64% { content: '查询中.....'; }
+            83.3% { content: '查询中......'; }
+            100% { content: '查询中.'; }
+        }
+
+        .loading-text::after {
+            content: '';
+            animation: dots-content 2.4s steps(6, end) infinite;
+        }
+
+        @keyframes dots-content {
+            0% { content: ''; }
+            16.66% { content: '.'; }
+            33.32% { content: '..'; }
+            49.98% { content: '...'; }
+            66.64% { content: '....'; }
+            83.3% { content: '.....'; }
+        }
+
+        .search-section {
+            margin-bottom: 0;
+        }
+
+        .search-section form {
+            display: flex;
+            gap: 0;
+            align-items: stretch;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            overflow: hidden;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-section form:focus-within {
+            border-color: #999999;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 14px 16px;
+            border: none;
+            font-size: 15px;
+            font-family: 'Consolas', 'SF Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Courier New', monospace;
+            letter-spacing: 0.3px;
+            transition: background-color 0.2s ease;
+            outline: none;
+            background: #fafafa;
+            color: #1a1a1a;
+        }
+
+        input[type="text"]:focus {
+            background: #ffffff;
+        }
+
+        input[type="text"]::placeholder {
+            color: #999999;
+        }
+
+        .btn {
+            flex-shrink: 0;
+            padding: 14px 28px;
+            background: #fafafa;
+            color: #333333;
+            border: none;
+            border-left: 1px solid #e0e0e0;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: #f0f0f0;
+        }
+
+        .btn:active {
+            background: #e5e5e5;
+        }
+
+        .btn:disabled {
+            background: #fafafa;
+            color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 48px;
+            color: #d0d0d0;
+            font-size: 11px;
+            font-weight: 400;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 40px 24px;
+            }
+
+            h1 {
+                font-size: 22px;
+                margin-bottom: 28px;
+            }
+
+            .search-section form {
+                flex-direction: column;
+                border: none;
+                gap: 10px;
+            }
+
+            input[type="text"] {
+                border: 1px solid #d0d0d0;
+                border-radius: 4px;
+            }
+
+            input[type="text"]:focus {
+                border-color: #999999;
+            }
+
+            .btn {
+                width: 100%;
+                padding: 14px 0;
+                border: 1px solid #d0d0d0;
+                border-radius: 4px;
+                border-left: 1px solid #d0d0d0;
+            }
+
+            .btn:hover {
+                border-color: #999999;
+            }
+
+            .divider {
+                margin: 36px 0 28px 0;
+            }
+
+            .table-label {
+                flex: 0 0 85px;
+                padding: 12px 14px;
+                font-size: 12px;
+            }
+
+            .table-value {
+                padding: 12px 14px;
+                font-size: 13px;
+            }
+
+            .footer {
+                margin-top: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>IP 地址查询</h1>
+        <div class="search-section">
+            <form method="POST" action="" onsubmit="return handleSubmit(event)">
+                <input
+                    type="text"
+                    name="input_ip"
+                    id="ip-input"
+                    placeholder="支持 IPv4/IPv6 地址"
+                    autocomplete="off"
+                >
+                {% if error_message %}
+                <div class="error-message show">{{ error_message }}</div>
+                {% else %}
+                <div class="error-message" id="error-message"></div>
+                {% endif %}
+                <button type="submit" class="btn">
+                    <span>查询</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="ip-display">
+            <div class="info-table">
+                <div class="table-row">
+                    <div class="table-label">IP 地址</div>
+                    <div class="table-value">{{ target_ip }}</div>
+                </div>
+                <div class="table-row loading-row">
+                    <div class="table-label">
+                        <span class="loading-icon"></span>
+                    </div>
+                    <div class="table-value">
+                        <span class="loading-text">查询中.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载后自动查询 IP 信息
+        const currentIp = document.querySelector('.table-value').textContent;
+
+        window.addEventListener('load', () => {
+            queryIpInfo(currentIp);
+
+            // 自动聚焦到输入框
+            const ipInput = document.getElementById('ip-input');
+            if (ipInput) {
+                // 检测是否为移动设备
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+                              || window.innerWidth <= 768;
+
+                if (isMobile) {
+                    // 移动端：先设置 readonly 再聚焦，避免弹出键盘
+                    ipInput.setAttribute('readonly', 'readonly');
+                    ipInput.focus();
+
+                    // 用户点击或触摸时移除 readonly，允许输入
+                    ipInput.addEventListener('click', function() {
+                        this.removeAttribute('readonly');
+                    }, { once: true });
+
+                    ipInput.addEventListener('touchstart', function() {
+                        this.removeAttribute('readonly');
+                    }, { once: true });
+                } else {
+                    // PC 端：直接聚焦，便于粘贴
+                    ipInput.focus();
+                }
+            }
+        });
+
+        // 异步查询 IP 信息
+        async function queryIpInfo(ip) {
+            try {
+                const response = await fetch('/api/query?ip=' + encodeURIComponent(ip));
+                if (!response.ok) {
+                    throw new Error('API 请求失败');
+                }
+
+                const data = await response.json();
+
+                if (data && data.ret === 200) {
+                    updateTable(data.data);
+                } else {
+                    showError('查询失败：' + (data.msg || 'API 无响应'));
+                }
+            } catch (error) {
+                console.error('查询错误:', error);
+                showError('查询失败：网络错误');
+            }
+        }
+
+        // 更新表格数据（动态创建行）
+        function updateTable(info) {
+            const {
+                isp, area,
+                country, country_id,
+                region, region_id,
+                city, city_id,
+                district, district_id,
+                lat, lng
+            } = info;
+
+            // 1. 移除加载状态行
+            const loadingRow = document.querySelector('.loading-row');
+            if (loadingRow) {
+                loadingRow.remove();
+            }
+
+            // 2. 定义字段映射（按顺序）
+            const fields = [
+                { key: 'country', label: '国家', value: country_id ? (country + ' (' + country_id + ')') : country },
+                { key: 'area', label: '区域', value: area },
+                { key: 'region', label: '省份', value: region_id ? (region + ' (' + region_id + ')') : region },
+                { key: 'city', label: '城市', value: city_id ? (city + ' (' + city_id + ')') : city },
+                { key: 'district', label: '区县', value: district_id ? (district + ' (' + district_id + ')') : district },
+                { key: 'isp', label: '运营商', value: isp },
+                { key: 'latlng', label: '经纬度', value: (lat && lng) ? (lat + ', ' + lng) : null }
+            ];
+
+            // 3. 动态创建行（只创建有值的行）
+            const table = document.querySelector('.info-table');
+            fields.forEach(field => {
+                if (field.value) {
+                    const row = document.createElement('div');
+                    row.className = 'table-row';
+
+                    const label = document.createElement('div');
+                    label.className = 'table-label';
+                    label.textContent = field.label;
+
+                    const value = document.createElement('div');
+                    value.className = 'table-value';
+                    value.textContent = field.value;
+
+                    row.appendChild(label);
+                    row.appendChild(value);
+                    table.appendChild(row);
+                }
+            });
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            // 移除加载状态行
+            const loadingRow = document.querySelector('.loading-row');
+            if (loadingRow) {
+                loadingRow.remove();
+            }
+        }
+
+        // IP 验证函数（与服务端保持一致）
+        function isValidIp(ip) {
+            if (!ip || typeof ip !== 'string') return false;
+            const ipv4Pattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            const ipv6Pattern = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|::)$/;
+            return ipv4Pattern.test(ip) || ipv6Pattern.test(ip);
+        }
+
+        // 处理表单提交
+        function handleSubmit(event) {
+            event.preventDefault();
+
+            const input = document.getElementById('ip-input');
+            const errorMsg = document.getElementById('error-message');
+            const ip = input.value.trim();
+
+            if (!ip) {
+                if (errorMsg) {
+                    errorMsg.textContent = '请输入 IP 地址';
+                    errorMsg.classList.add('show');
+                }
+                return false;
+            }
+
+            if (!isValidIp(ip)) {
+                if (errorMsg) {
+                    errorMsg.textContent = '请输入有效的 IPv4 或 IPv6 地址';
+                    errorMsg.classList.add('show');
+                }
+                return false;
+            }
+
+            // 隐藏错误消息
+            if (errorMsg) {
+                errorMsg.classList.remove('show');
+            }
+
+            // 跳转到新 IP 查询页面
+            window.location.href = '/?ip=' + encodeURIComponent(ip);
+            return false;
+        }
+    </script>
+</body>
+</html>
