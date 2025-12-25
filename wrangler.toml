@@ -1,0 +1,24 @@
+name = "ip-checker"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# 兼容性标志
+# https://developers.cloudflare.com/workers/configuration/compatibility-dates/
+compatibility_flags = []
+
+# 观察者模式（开发环境）
+# workers_dev = true
+
+# 路由配置（生产环境）
+# routes = [
+#   { pattern = "example.com/*", zone_name = "example.com" }
+# ]
+
+# 环境变量（非敏感配置）
+# [vars]
+# SOME_CONFIG = "value"
+
+# 敏感环境变量请在 Cloudflare Dashboard 中配置：
+# Settings > Variables > Environment Variables
+# 需要配置的变量：
+# - APPCODE（API 授权码）
