@@ -6,6 +6,21 @@ compatibility_date = "2024-01-01"
 # https://developers.cloudflare.com/workers/configuration/compatibility-dates/
 compatibility_flags = []
 
+# 排除不需要的文件（避免构建时安装 Python 依赖）
+[build.upload]
+exclude = [
+  "*.py",
+  "*.pyc",
+  "__pycache__",
+  "requirements.txt",
+  "Dockerfile",
+  "docker-compose.yml",
+  "nginx.conf.example",
+  ".env.example",
+  "templates/",
+  "*.md"
+]
+
 # 观察者模式（开发环境）
 # workers_dev = true
 
