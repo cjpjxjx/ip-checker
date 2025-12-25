@@ -442,6 +442,23 @@
             if (loadingRow) {
                 loadingRow.remove();
             }
+
+            // 显示错误信息行
+            const table = document.querySelector('.info-table');
+            const errorRow = document.createElement('div');
+            errorRow.className = 'table-row';
+
+            const errorLabel = document.createElement('div');
+            errorLabel.className = 'table-label';
+            errorLabel.textContent = '错误';
+
+            const errorValue = document.createElement('div');
+            errorValue.className = 'table-value error';
+            errorValue.textContent = message;
+
+            errorRow.appendChild(errorLabel);
+            errorRow.appendChild(errorValue);
+            table.appendChild(errorRow);
         }
 
         // IP 验证函数（与服务端保持一致）

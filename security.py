@@ -89,5 +89,9 @@ def check_domain_authorization(origin: Optional[str], referer: Optional[str], re
         except Exception:
             pass
 
+    # 允许本地开发环境（localhost 和 127.0.0.1）的同源请求
+    if request_host in ('localhost', '127.0.0.1'):
+        return True
+
     # 如果既没有 Origin 也没有 Referer，拒绝访问
     return False

@@ -11,7 +11,7 @@ class Config:
     API_TIMEOUT = 5.0  # 秒
 
     # 缓存配置
-    CACHE_TTL = 3600  # 缓存时间（秒），1小时
+    CACHE_TTL = 86400  # 缓存时间（秒），24小时
     CACHE_MAX_SIZE = 1000  # 最大缓存条目数
 
     # 速率限制配置

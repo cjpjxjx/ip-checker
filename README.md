@@ -1,6 +1,6 @@
 # IP 地址查询服务
 
-IP 地址查询服务，提供 FastAPI 独立部署和 Cloudflare Worker 边缘部署两种方式。
+基于 FastAPI 和 Cloudflare Workers 的 IP 地址查询服务，支持地理位置查询和特殊地址识别。
 
 ## 📦 部署方式
 
@@ -15,11 +15,34 @@ IP 地址查询服务，提供 FastAPI 独立部署和 Cloudflare Worker 边缘�
 
 ### 前置要求
 
+**Docker 部署：**
 - Docker
 - Docker Compose
 - Nginx（通过反向代理访问）
 
-### 首次部署
+**本地开发：**
+- Python 3.10+
+- pip
+
+### 本地开发
+
+```bash
+# 1. 安装依赖
+pip install -r requirements.txt
+
+# 2. 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件，设置 APPCODE
+
+# 3. 启动服务
+python main.py
+```
+
+访问 `http://127.0.0.1:8000` 即可使用。
+
+### Docker 部署
+
+#### 首次部署
 
 ```bash
 # 1. 创建 nginx_default 网络（如果不存在）
@@ -28,7 +51,7 @@ docker network create nginx_default
 # 2. 进入项目目录
 cd ip-checker
 
-# 3. （可选）创建 .env 文件设置 API 授权码
+# 3. 配置环境变量
 cp .env.example .env
 # 编辑 .env 文件，设置 APPCODE
 
@@ -36,14 +59,14 @@ cp .env.example .env
 docker compose up -d
 ```
 
-### 后续启动
+#### 后续启动
 
 ```bash
 cd ip-checker
 docker compose up -d
 ```
 
-### 访问服务
+#### 访问服务
 
 服务运行在容器内 `8000` 端口，通过 Nginx 反向代理访问：
 
@@ -64,13 +87,13 @@ location / {
 - **健康检查**: `/health`
 - **CLI 模式**: `curl https://your-domain.com`
 
-### 停止服务
+#### 停止服务
 
 ```bash
 docker compose down
 ```
 
-### 查看日志
+#### 查看日志
 
 ```bash
 docker compose logs -f
@@ -93,8 +116,8 @@ docker compose logs -f
 
 ```javascript
 const CONFIG = {
-  // 缓存时间（秒）
-  CACHE_TTL: 3600,
+  // 缓存时间（秒），24 小时
+  CACHE_TTL: 86400,
 
   // 速率限制
   RATE_LIMIT: {
@@ -112,11 +135,13 @@ const CONFIG = {
 ## ✨ 功能特性
 
 - 🌐 IP 信息查询（地理位置、运营商等）
-- 🚀 内存缓存（1小时 TTL）
+- 🏠 特殊地址识别（RFC 1918 私有地址、环回地址、链路本地地址等）
+- 🚀 内存缓存（24 小时 TTL）
 - 🛡️ 速率限制（每分钟10次，每小时100次）
 - 🔒 安全保护（CORS、XSS 防护、安全响应头）
 - 📱 响应式 Web 界面
 - 🔌 RESTful API
+- ⚙️ 支持 .env 文件配置
 
 ## 📁 项目结构
 
@@ -153,8 +178,8 @@ const CONFIG = {
 
 ```python
 class Config:
-    # 缓存时间（秒）
-    CACHE_TTL = 3600
+    # 缓存时间（秒），24 小时
+    CACHE_TTL = 86400
 
     # 速率限制
     RATE_LIMIT_PER_MINUTE = 10
@@ -169,12 +194,29 @@ class Config:
 
 ### 环境变量
 
-在 `.env` 文件中设置：
+在项目根目录创建 `.env` 文件：
 
 ```bash
 # API 授权码
 APPCODE=your_api_code_here
 ```
+
+应用启动时会自动加载 `.env` 文件中的环境变量。
+
+## 🏠 特殊地址识别
+
+服务内置了特殊 IP 地址识别功能，以下类型的地址会直接返回预定义信息，无需查询上游 API：
+
+| 地址类型 | 地址范围 | 示例 |
+|---------|---------|------|
+| 环回地址 | 127.0.0.0/8, ::1 | 127.0.0.1 |
+| A 类私有网络 | 10.0.0.0/8 | 10.0.0.1 |
+| B 类私有网络 | 172.16.0.0/12 | 172.16.0.1 |
+| C 类私有网络 | 192.168.0.0/16 | 192.168.1.1 |
+| 链路本地地址 | 169.254.0.0/16, fe80::/10 | 169.254.1.1 |
+| IPv6 私有网络 | fc00::/7 | fd00::1 |
+| 组播地址 | 224.0.0.0/4 | 224.0.0.1 |
+| 保留地址 | 240.0.0.0/4 | 240.0.0.1 |
 
 ## 🔧 API 使用示例
 

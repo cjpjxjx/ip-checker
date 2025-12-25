@@ -11,9 +11,13 @@ import httpx
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
+from dotenv import load_dotenv
+
+# 加载 .env 文件
+load_dotenv()
 
 from config import Config
-from utils import is_valid_ip, get_client_ip, escape_html
+from utils import is_valid_ip, get_client_ip, escape_html, get_special_ip_info
 from cache import ip_info_cache
 from rate_limiter import rate_limiter
 from security import get_security_headers, check_domain_authorization
@@ -217,6 +221,12 @@ async def query_ip_info_with_cache(ip: str, app_code: str) -> dict:
     Returns:
         API 响应数据
     """
+    # 检查是否为特殊 IP 地址（RFC 1918 私有地址、环回地址等）
+    # 特殊地址直接返回预定义信息
+    special_ip_info = get_special_ip_info(ip)
+    if special_ip_info:
+        return special_ip_info
+
     api_url = f"{Config.API_HOST}{Config.API_PATH}?ip={ip}"
 
     # 1. 尝试从缓存读取

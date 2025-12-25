@@ -2,8 +2,8 @@
 const CONFIG = {
   API_HOST: "https://c2ba.api.huachen.cn",
   API_PATH: "/ip",
-  API_TIMEOUT: 5000,        // API 请求超时时间（毫秒）
-  CACHE_TTL: 3600,         // 缓存时间（秒），1小时
+  API_TIMEOUT: 10000,        // API 请求超时时间（毫秒）
+  CACHE_TTL: 86400,         // 缓存时间（秒），24小时
 
   // 速率限制配置
   RATE_LIMIT: {
@@ -71,6 +71,308 @@ function isDomainAllowed(hostname, allowedDomains) {
     const regex = new RegExp(`^${regexPattern}$`, 'i');
     return regex.test(hostname);
   });
+}
+
+/**
+ * 检测特殊 IP 地址并返回预定义信息（无需查询上游 API）
+ * 支持的特殊地址类型：
+ * - RFC 1918 私有地址 (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
+ * - 环回地址 (127.0.0.0/8, ::1)
+ * - 链路本地地址 (169.254.0.0/16, fe80::/10)
+ * - IPv6 唯一本地地址 (fc00::/7)
+ * - 其他保留地址
+ * @param {string} ip - IP 地址字符串
+ * @returns {Object|null} 如果是特殊地址，返回预定义的 API 响应格式；否则返回 null
+ */
+function getSpecialIpInfo(ip) {
+  // IPv4 特殊地址检测
+  if (IPV4_PATTERN.test(ip)) {
+    const parts = ip.split('.').map(Number);
+
+    // 环回地址 (127.0.0.0/8)
+    if (parts[0] === 127) {
+      return {
+        ret: 200,
+        msg: 'ok',
+        data: {
+          ip: ip,
+          country: '本机',
+          country_id: 'CN',
+          area: '本机环回地址',
+          region: '',
+          region_id: '',
+          city: 'Localhost',
+          city_id: '',
+          district: '',
+          district_id: '',
+          isp: 'Loopback',
+          lat: '',
+          lng: ''
+        }
+      };
+    }
+
+    // 私有地址 - 10.0.0.0/8
+    if (parts[0] === 10) {
+      return {
+        ret: 200,
+        msg: 'ok',
+        data: {
+          ip: ip,
+          country: '内网',
+          country_id: '',
+          area: 'A 类私有网络',
+          region: '',
+          region_id: '',
+          city: 'Local Network',
+          city_id: '',
+          district: '',
+          district_id: '',
+          isp: 'Private',
+          lat: '',
+          lng: ''
+        }
+      };
+    }
+
+    // 私有地址 - 172.16.0.0/12
+    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) {
+      return {
+        ret: 200,
+        msg: 'ok',
+        data: {
+          ip: ip,
+          country: '内网',
+          country_id: '',
+          area: 'B 类私有网络',
+          region: '',
+          region_id: '',
+          city: 'Local Network',
+          city_id: '',
+          district: '',
+          district_id: '',
+          isp: 'Private',
+          lat: '',
+          lng: ''
+        }
+      };
+    }
+
+    // 私有地址 - 192.168.0.0/16
+    if (parts[0] === 192 && parts[1] === 168) {
+      return {
+        ret: 200,
+        msg: 'ok',
+        data: {
+          ip: ip,
+          country: '内网',
+          country_id: '',
+          area: 'C 类私有网络',
+          region: '',
+          region_id: '',
+          city: 'Local Network',
+          city_id: '',
+          district: '',
+          district_id: '',
+          isp: 'Private',
+          lat: '',
+          lng: ''
+        }
+      };
+    }
+
+    // 链路本地地址 (169.254.0.0/16)
+    if (parts[0] === 169 && parts[1] === 254) {
+      return {
+        ret: 200,
+        msg: 'ok',
+        data: {
+          ip: ip,
+          country: '本地链路',
+          country_id: '',
+          area: '链路本地地址 (APIPA/Link-Local)',
+          region: '',
+          region_id: '',
+          city: 'Link-Local',
+          city_id: '',
+          district: '',
+          district_id: '',
+          isp: 'Link-Local',
+          lat: '',
+          lng: ''
+        }
+      };
+    }
+
+    // 组播地址 (224.0.0.0/4)
+    if (parts[0] >= 224 && parts[0] <= 239) {
+      return {
+        ret: 200,
+        msg: 'ok',
+        data: {
+          ip: ip,
+          country: '组播',
+          country_id: '',
+          area: '组播地址 (Multicast)',
+          region: '',
+          region_id: '',
+          city: 'Multicast',
+          city_id: '',
+          district: '',
+          district_id: '',
+          isp: 'Multicast',
+          lat: '',
+          lng: ''
+        }
+      };
+    }
+
+    // 保留地址 (240.0.0.0/4)
+    if (parts[0] >= 240) {
+      return {
+        ret: 200,
+        msg: 'ok',
+        data: {
+          ip: ip,
+          country: '保留',
+          country_id: '',
+          area: '保留地址 (Reserved)',
+          region: '',
+          region_id: '',
+          city: 'Reserved',
+          city_id: '',
+          district: '',
+          district_id: '',
+          isp: 'Reserved',
+          lat: '',
+          lng: ''
+        }
+      };
+    }
+
+    // 未指定地址 (0.0.0.0/8)
+    if (parts[0] === 0) {
+      return {
+        ret: 200,
+        msg: 'ok',
+        data: {
+          ip: ip,
+          country: '未指定',
+          country_id: '',
+          area: '未指定地址',
+          region: '',
+          region_id: '',
+          city: 'Unspecified',
+          city_id: '',
+          district: '',
+          district_id: '',
+          isp: 'Unspecified',
+          lat: '',
+          lng: ''
+        }
+      };
+    }
+  }
+
+  // IPv6 特殊地址检测（简化版）
+  if (IPV6_PATTERN.test(ip)) {
+    const lower = ip.toLowerCase();
+
+    // 环回地址 (::1)
+    if (lower === '::1') {
+      return {
+        ret: 200,
+        msg: 'ok',
+        data: {
+          ip: ip,
+          country: '本机',
+          country_id: 'CN',
+          area: '本机环回地址',
+          region: '',
+          region_id: '',
+          city: 'Localhost',
+          city_id: '',
+          district: '',
+          district_id: '',
+          isp: 'Loopback',
+          lat: '',
+          lng: ''
+        }
+      };
+    }
+
+    // 链路本地地址 (fe80::/10)
+    if (lower.startsWith('fe80:')) {
+      return {
+        ret: 200,
+        msg: 'ok',
+        data: {
+          ip: ip,
+          country: '本地链路',
+          country_id: '',
+          area: '链路本地地址 (Link-Local)',
+          region: '',
+          region_id: '',
+          city: 'Link-Local',
+          city_id: '',
+          district: '',
+          district_id: '',
+          isp: 'Link-Local',
+          lat: '',
+          lng: ''
+        }
+      };
+    }
+
+    // 唯一本地地址 (fc00::/7)
+    if (lower.startsWith('fc') || lower.startsWith('fd')) {
+      return {
+        ret: 200,
+        msg: 'ok',
+        data: {
+          ip: ip,
+          country: '内网',
+          country_id: '',
+          area: 'IPv6 私有网络',
+          region: '',
+          region_id: '',
+          city: 'Local Network',
+          city_id: '',
+          district: '',
+          district_id: '',
+          isp: 'Private',
+          lat: '',
+          lng: ''
+        }
+      };
+    }
+
+    // 未指定地址 (::)
+    if (lower === '::') {
+      return {
+        ret: 200,
+        msg: 'ok',
+        data: {
+          ip: ip,
+          country: '未指定',
+          country_id: '',
+          area: '未指定地址',
+          region: '',
+          region_id: '',
+          city: 'Unspecified',
+          city_id: '',
+          district: '',
+          district_id: '',
+          isp: 'Unspecified',
+          lat: '',
+          lng: ''
+        }
+      };
+    }
+  }
+
+  // 不是特殊地址，返回 null
+  return null;
 }
 
 /**
@@ -447,6 +749,13 @@ export default {
  * @returns {Promise<Object|null>} API 响应数据或 null
  */
 async function queryIpInfoWithCache(ip, appCode, ctx) {
+  // 检查是否为特殊 IP 地址（RFC 1918 私有地址、环回地址等）
+  // 特殊地址直接返回预定义信息
+  const specialIpInfo = getSpecialIpInfo(ip);
+  if (specialIpInfo) {
+    return specialIpInfo;
+  }
+
   const apiUrl = `${CONFIG.API_HOST}${CONFIG.API_PATH}?ip=${encodeURIComponent(ip)}`;
 
   // --- 缓存逻辑开始 ---
