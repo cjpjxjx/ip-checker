@@ -9,7 +9,8 @@ from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 
@@ -54,6 +55,9 @@ app = FastAPI(
 # 初始化模板
 templates = Jinja2Templates(directory="templates")
 
+# 挂载静态文件（favicon）
+app.mount("/static", StaticFiles(directory="templates/favicon"), name="static")
+
 # 从环境变量获取 APPCODE
 APPCODE = os.getenv("APPCODE", Config.APPCODE)
 
@@ -83,26 +87,49 @@ async def robots_txt():
 
 @app.get("/favicon.ico")
 async def favicon():
-    """Favicon（返回自定义图标）"""
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                "https://dl.cencs.com/static/ip/favicon.ico",
-                timeout=5.0
-            )
-            if response.status_code == 200:
-                headers = get_security_headers(is_api=False)
-                headers['Content-Type'] = 'image/x-icon'
-                headers['Cache-Control'] = 'public, max-age=86400'
-                return Response(
-                    content=response.content,
-                    headers=headers,
-                    media_type='image/x-icon'
-                )
-    except Exception:
-        pass
+    """返回本地 favicon"""
+    favicon_path = "templates/favicon/favicon.ico"
+    if os.path.exists(favicon_path):
+        return FileResponse(
+            favicon_path,
+            media_type='image/x-icon',
+            headers={
+                'Cache-Control': 'public, max-age=86400',
+                **get_security_headers(is_api=False)
+            }
+        )
+    return Response(status_code=204, headers=get_security_headers(is_api=False))
 
-    # 降级：返回 204
+
+@app.get("/site.webmanifest")
+async def webmanifest():
+    """返回 PWA manifest 文件"""
+    manifest_path = "templates/favicon/site.webmanifest"
+    if os.path.exists(manifest_path):
+        return FileResponse(
+            manifest_path,
+            media_type='application/manifest+json',
+            headers={
+                'Cache-Control': 'public, max-age=86400',
+                **get_security_headers(is_api=False)
+            }
+        )
+    return Response(status_code=204, headers=get_security_headers(is_api=False))
+
+
+@app.get("/apple-touch-icon.png")
+async def apple_touch_icon():
+    """返回 Apple Touch Icon"""
+    icon_path = "templates/favicon/apple-touch-icon.png"
+    if os.path.exists(icon_path):
+        return FileResponse(
+            icon_path,
+            media_type='image/png',
+            headers={
+                'Cache-Control': 'public, max-age=86400',
+                **get_security_headers(is_api=False)
+            }
+        )
     return Response(status_code=204, headers=get_security_headers(is_api=False))
 
 
