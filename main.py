@@ -46,7 +46,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=Config.APP_TITLE,
     version=Config.APP_VERSION,
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url=None,  # 禁用 Swagger UI 文档
+    redoc_url=None  # 禁用 ReDoc 文档
 )
 
 # 初始化模板
@@ -279,7 +281,6 @@ if __name__ == "__main__":
     print("=" * 60)
     print(f"版本: {Config.APP_VERSION}")
     print(f"访问地址: http://127.0.0.1:8000")
-    print(f"API 文档: http://127.0.0.1:8000/docs")
     print("=" * 60)
     print("提示: 请设置环境变量 APPCODE 以使用上游 API")
     print("=" * 60)

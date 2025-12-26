@@ -37,6 +37,12 @@
             color: #1a1a1a;
         }
 
+        h1 a {
+            color: inherit;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
         .subtitle {
             color: #666666;
             font-size: 14px;
@@ -214,9 +220,11 @@
 
         .error-message {
             color: #d32f2f;
-            font-size: 13px;
-            margin-top: 10px;
+            font-size: 16px;
+            padding: 0 16px;
             display: none;
+            align-self: center;
+            background: transparent;
         }
 
         .error-message.show {
@@ -283,6 +291,19 @@
                 font-size: 13px;
             }
 
+            /* 移动端 IP 地址横向滚动 */
+            .ip-row .table-value {
+                overflow-x: auto;
+                white-space: nowrap;
+                word-break: normal;
+                -webkit-overflow-scrolling: touch;
+                line-height: 1.5;
+            }
+
+            .ip-row .table-label {
+                line-height: 1.5;
+            }
+
             .footer {
                 margin-top: 36px;
             }
@@ -291,7 +312,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>IP 地址查询</h1>
+        <h1><a href="/">IP 地址查询</a></h1>
         <div class="search-section">
             <form method="POST" action="" onsubmit="return handleSubmit(event)">
                 <input
@@ -314,9 +335,13 @@
 
         <div class="ip-display">
             <div class="info-table">
-                <div class="table-row">
+                <div class="table-row ip-row">
                     <div class="table-label">IP 地址</div>
                     <div class="table-value">{{ target_ip }}</div>
+                </div>
+                <div class="table-row">
+                    <div class="table-label">IP 类别</div>
+                    <div class="table-value" id="ip-type">-</div>
                 </div>
                 <div class="table-row loading-row">
                     <div class="table-label">
@@ -331,10 +356,24 @@
     </div>
 
     <script>
+        // 判断 IP 类型
+        function getIpType(ip) {
+            if (!ip) return '-';
+            if (ip.includes(':')) return 'IPv6';
+            if (ip.includes('.')) return 'IPv4';
+            return '-';
+        }
+
         // 页面加载后自动查询 IP 信息
         const currentIp = document.querySelector('.table-value').textContent;
 
         window.addEventListener('load', () => {
+            // 显示 IP 类型
+            const ipTypeElement = document.getElementById('ip-type');
+            if (ipTypeElement) {
+                ipTypeElement.textContent = getIpType(currentIp);
+            }
+
             queryIpInfo(currentIp);
 
             // 自动聚焦到输入框
